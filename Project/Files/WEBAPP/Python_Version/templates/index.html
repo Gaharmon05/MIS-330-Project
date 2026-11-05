@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StyleHub · {{ page_title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='Styles/index.css') }}">
+</head>
+<body>
+<div class="app">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark">S</span>
+      <span class="brand-name">Style<span>Hub</span></span>
+    </a>
+
+    <nav class="nav">
+      {% set groups = [('Store', ['shop', 'cart', 'orders', 'alterations', 'account']),
+                       ('Staff', ['board']),
+                       ('Manager', ['products', 'inventory', 'employees', 'reports'])] %}
+      {% for label, ids in groups %}
+        {% set group_tabs = tabs | selectattr(0, 'in', ids) | list %}
+        {% if group_tabs %}
+          <div class="nav-label">{{ label }}</div>
+          {% for id, name, subtitle, icon_name, audience in group_tabs %}
+            <a class="nav-link {% if id == tab %}active{% endif %}" href="{{ url_for('index', tab=id) }}">
+              {{ icon(icon_name) }} {{ 'Sign in' if id == 'account' and not user else name }}
+              {% if id == 'cart' and cart_count %}<span class="nav-count">{{ cart_count }}</span>{% endif %}
+            </a>
+          {% endfor %}
+        {% endif %}
+      {% endfor %}
+    </nav>
+
+    {% if user %}
+    <div class="sidebar-user">
+      <span class="avatar">{{ initials(user.name) }}</span>
+      <div class="who">
+        <div class="name">{{ user.name }}</div>
+        <div class="role">{{ user.role }}</div>
+      </div>
+      <form method="post" action="{{ url_for('logout') }}" class="inline">
+        <button class="icon-btn" title="Sign out" aria-label="Sign out">{{ icon('logout') }}</button>
+      </form>
+    </div>
+    {% endif %}
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1>{{ page_title }}</h1>
+        <div class="subtitle">{{ page_subtitle }}</div>
+      </div>
+      <div class="topbar-actions">
+        {% if user and user.type == 'customer' %}
+          <a class="btn btn-blue" href="{{ url_for('index', tab='cart') }}">{{ icon('cart') }} Cart · {{ cart_count }}</a>
+        {% elif not user %}
+          <a class="btn btn-primary" href="{{ url_for('index', tab='account') }}">{{ icon('user') }} Sign in</a>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-stack">
+          {% for kind, message in messages %}
+            <div class="flash flash-{{ kind }}">{{ icon('check' if kind == 'success' else 'alert') }} {{ message }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+
+      {% include "tabs/" ~ tab ~ ".html" %}
+    </main>
+  </div>
+</div>
+</body>
+</html>

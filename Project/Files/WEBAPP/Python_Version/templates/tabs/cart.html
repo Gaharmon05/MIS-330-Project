@@ -1,0 +1,59 @@
+{# ===================== CART & CHECKOUT ===================== #}
+{% if cart %}
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h2>Items in your cart</h2><span class="spacer"></span><span class="muted">{{ cart_count }} item{{ '' if cart_count == 1 else 's' }}</span></div>
+    {% for item in cart %}
+    <div class="line-item">
+      <span class="swatch-sm" style="background: {{ swatch(item.Color) }}"></span>
+      <div class="info">
+        <div class="title">{{ item.ProductName }}</div>
+        <div class="muted small">{{ item.Brand }} · Size {{ item.Size }} · {{ item.Color }} · {{ item.PricePerUnit|money }} each</div>
+      </div>
+      <form method="post" action="{{ url_for('update_cart') }}" class="qty-form">
+        <input type="hidden" name="product_id" value="{{ item.ProductID }}">
+        <input class="input input-sm" type="number" name="quantity" value="{{ item.Quantity }}" min="0" max="{{ item.QuantityInStock }}" aria-label="Quantity">
+        <button class="btn btn-sm">Update</button>
+      </form>
+      <div class="line-total">{{ item.LineTotal|money }}</div>
+      <form method="post" action="{{ url_for('remove_from_cart') }}" class="inline">
+        <input type="hidden" name="product_id" value="{{ item.ProductID }}">
+        <button class="icon-btn btn-danger" title="Remove" aria-label="Remove {{ item.ProductName }}">{{ icon('trash') }}</button>
+      </form>
+    </div>
+    {% endfor %}
+  </section>
+
+  <aside class="card">
+    <div class="card-body">
+      <h2 class="section-title">Order summary</h2>
+      {% for item in cart %}
+        <div class="summary-row"><span>{{ item.Quantity }} × {{ item.ProductName }}</span><span>{{ item.LineTotal|money }}</span></div>
+      {% endfor %}
+      <div class="summary-total"><span class="muted">Total</span><strong>{{ cart_total|money }}</strong></div>
+      <form method="post" action="{{ url_for('place_order') }}" class="form-stack" style="margin-top:18px;">
+        <h3 class="section-title">Payment</h3>
+        <div class="form-grid">
+          <label class="field"><span>Pay with</span>
+            <select name="payment_method" required>
+              {% for m in payment_methods %}<option>{{ m }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="field"><span>Card last 4 digits</span>
+            <input name="card_last_four" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="Cards only">
+          </label>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block">{{ icon('check') }} Pay {{ cart_total|money }} &amp; place order</button>
+      </form>
+      <p class="muted small" style="margin:12px 0 0;">Placing the order saves it, records each item at today's price, lowers inventory, records your payment and empties your cart — all in one database transaction.</p>
+    </div>
+  </aside>
+</div>
+{% else %}
+<div class="card"><div class="empty">
+  <div class="e-icon">{{ icon('cart') }}</div>
+  <h3>Your cart is empty</h3>
+  <p>Find something you like in the shop.</p>
+  <a class="btn btn-primary" href="{{ url_for('index', tab='shop') }}">{{ icon('shop') }} Go to shop</a>
+</div></div>
+{% endif %}

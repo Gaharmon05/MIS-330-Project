@@ -1,0 +1,79 @@
+{# ===================== ALTERATIONS (customer side) ===================== #}
+<section class="card">
+  <div class="card-head"><h2>Our services</h2><span class="spacer"></span><span class="muted">Bring in any piece of clothing — bought here or anywhere else.</span></div>
+  <div class="card-body">
+    <div class="service-grid">
+      {% for s in services %}
+      <div class="service">
+        <div class="s-icon">{{ icon('scissors') }}</div>
+        <h3>{{ s.AlterationName }}</h3>
+        <p>{{ s.Description }}</p>
+        <span class="s-price">{{ s.AlterationPrice|money }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if user and user.type == 'customer' %}
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h2>My alteration orders</h2></div>
+    {% for a in my_alterations %}
+      {% set step = statuses.index(a.Status) %}
+      <div class="alt-card">
+        <div class="alt-top">
+          <div class="info">
+            <div class="title">{{ a.GarmentDescription }}</div>
+            <div class="muted small">#{{ a.AlterationOrderID }} · {{ a.AlterationName }} · requested {{ a.RequestDate|day }}
+              · {{ ('Tailor: ' ~ a.Tailor) if a.Tailor else 'Waiting for a tailor' }}
+              {% if a.PickupDate %} · picked up {{ a.PickupDate|day }}{% endif %}</div>
+          </div>
+          <span class="fee">{{ a.ServiceFee|money }}</span>
+          {% if a.Status == 'Received' %}
+          <form method="post" action="{{ url_for('cancel_alteration') }}" class="inline">
+            <input type="hidden" name="alteration_order_id" value="{{ a.AlterationOrderID }}">
+            <button class="btn btn-sm btn-danger">Cancel</button>
+          </form>
+          {% endif %}
+        </div>
+        <div class="stepper">
+          {% for s in statuses %}
+            <div class="step {% if loop.index0 < step or a.Status == 'Completed' %}done{% elif loop.index0 == step %}current{% endif %}">
+              <div class="dot">{% if loop.index0 < step or a.Status == 'Completed' %}{{ icon('check') }}{% endif %}</div>{{ s }}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <div class="empty">
+        <div class="e-icon">{{ icon('scissors') }}</div>
+        <h3>No alteration orders yet</h3>
+        <p>Request one with the form.</p>
+      </div>
+    {% endfor %}
+  </section>
+
+  <aside class="card">
+    <div class="card-head"><h2>Request an alteration</h2></div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('request_alteration') }}" class="form-stack">
+        <label class="field"><span>Garment to alter</span>
+          <input name="garment" required maxlength="255" placeholder="e.g. Navy suit pants, 34x32">
+        </label>
+        <label class="field"><span>Service</span>
+          <select name="alteration_id" required>
+            {% for s in services %}<option value="{{ s.AlterationID }}">{{ s.AlterationName }} — {{ s.AlterationPrice|money }}</option>{% endfor %}
+          </select>
+        </label>
+        <button class="btn btn-primary">{{ icon('plus') }} Submit request</button>
+        <p class="muted small" style="margin:0;">Drop the garment off at the store. We'll assign a tailor and you can follow each step here.</p>
+      </form>
+    </div>
+  </aside>
+</div>
+{% elif not user %}
+<div class="callout">{{ icon('info') }}<span><a href="{{ url_for('index', tab='account') }}">Sign in as a customer</a> to request an alteration and track its status.</span></div>
+{% else %}
+<div class="callout">{{ icon('info') }}<span>Staff manage alteration orders on the <a href="{{ url_for('index', tab='board') }}">Work board</a>.</span></div>
+{% endif %}
