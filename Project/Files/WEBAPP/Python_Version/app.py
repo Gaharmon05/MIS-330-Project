@@ -238,10 +238,14 @@ def load_products():
 
 def load_inventory():
     no_filters = {key: None for key in ("text", "like", "category", "size", "color", "min_price", "max_price", "sort")}
+    items_by_purchase = defaultdict(list)
+    for item in db.fetch_all(q.SUPPLIER_PURCHASE_ITEMS):
+        items_by_purchase[item["PurchaseID"]].append(item)
     return {
         "low_stock": db.fetch_all(q.LOW_STOCK),
         "suppliers": db.fetch_all(q.ALL_SUPPLIERS),
         "purchases": db.fetch_all(q.SUPPLIER_PURCHASES),
+        "purchase_items": items_by_purchase,
         "products": db.fetch_all(q.SEARCH_PRODUCTS, no_filters),
     }
 
@@ -546,13 +550,28 @@ def update_supplier():
 def add_purchase():
     if not is_manager():
         return deny()
-    db.execute(q.INSERT_SUPPLIER_PURCHASE, (
-        request.form.get("supplier_id", type=int),
-        request.form.get("product_id", type=int),
-        Decimal(form_text("unit_cost")),
-        int(form_text("quantity")),
-    ))
-    flash("Purchase order recorded. Mark it received when the shipment arrives.", "success")
+    product_ids = request.form.getlist("product_id", type=int)
+    quantities = request.form.getlist("quantity")
+    unit_costs = request.form.getlist("unit_cost")
+
+    items = []
+    for product_id, qty_text, cost_text in zip(product_ids, quantities, unit_costs):
+        qty_text = qty_text.strip()
+        if not qty_text:
+            continue                       # blank = not ordered
+        unit_cost = to_decimal(cost_text)
+        if not qty_text.isdigit() or int(qty_text) < 1 or unit_cost is None or unit_cost < 0:
+            flash("Every product you order needs a quantity of 1 or more and a unit cost.", "error")
+            return back_to("inventory")
+        items.append((product_id, unit_cost, int(qty_text)))
+
+    if not items:
+        flash("Enter a quantity for at least one product.", "error")
+        return back_to("inventory")
+
+    purchase_id = db.create_supplier_purchase(request.form.get("supplier_id", type=int), items)
+    flash(f"Purchase order #{purchase_id} recorded with {len(items)} product(s). "
+          "Mark it received when the shipment arrives.", "success")
     return back_to("inventory")
 
 

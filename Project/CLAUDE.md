@@ -25,31 +25,31 @@ The AlterationOrder entity was originally modeled as an alteration of a *product
 "Payment recording" is a required function, so a `Payment` table was added: one row per order
 (`OrderID` UNIQUE), PaymentMethod ENUM, CardLastFour (cards only, enforced by a CHECK), Amount,
 PaymentDate. db.place_order() inserts it in the same transaction as the order.
-Updated diagrams live beside the originals: `Project Reference Materials/ERD v2.png` and
-`Relational Schema v2.png` (originals kept unchanged).
+Updated diagrams live beside the originals: `Project Reference Materials (ERD)/ERD v2 (claude).png` and
+`Relational Schema v2(claude).png` (originals kept unchanged).
 
 ## Folder layout
 ```
 /Project Requirements        Project Five requirements (read-only reference)
-/Project Reference Materials ERD, relational schema, business requirements doc
+/Project Reference Materials (ERD)  ERD, relational schema, business requirements doc
 /Class Reference Material    class examples for SQL + Python connection patterns
 /Files/DATABASE              01_schema.sql, 02_sample_data.sql, 03_reports.sql (MySQL)
 /Files/WEBAPP
     /Python_Version          Flask server-rendered: app.py, ui.py, db.py, queries.py, templates/ (index.html + tabs/*.html)
-    /JavaScript_Version      index.html + Client_Resources/Scripts/index.js (vanilla JS, fetch) + Styles/index.css
-/Files/API                   api.py (Flask JSON API used by the JavaScript version) + db.py + queries.py
+(Files/WEBAPP/Client_Resources/ holds the team's original empty starter files; unused.)
 README.md                    how to run everything (paste into GitHub)
 ```
-Kept in sync by hand -- change BOTH copies:
-- db.py and queries.py: Python_Version/ and API/ are identical.
-- index.css: Python_Version/ and JavaScript_Version/ are identical (shared design system).
-(Files/WEBAPP/Client_Resources/ holds the team's original empty starter files; unused.)
 
-## Two website versions (team will pick one)
-1. **Python version** -- Flask renders each tab on the server (Jinja templates). One route "/" with ?tab=...
-2. **JavaScript version** -- single-page vanilla JS (hash routing, fetch) calling the Python JSON API.
+## Supplier purchase orders (changed at the user's request, 2026-11-08)
+A supplier purchase order can hold MANY products. `SupplierPurchase` is the header (SupplierID,
+PurchaseDate, ReceivedDate); `SupplierPurchaseItem` holds the lines (PK PurchaseID+ProductID,
+PricePerUnit, Quantity, generated LineTotal) -- same pattern as Orders/OrderItem.
+db.create_supplier_purchase() inserts header + items in one transaction; receiving adds every line to stock.
+The ERD/schema PNGs were NOT updated for this change (the team handles the diagrams).
 
-Both versions must expose the same features, use the same database and SQL, and look the same.
+## Website
+Only the **Python version** exists (the JavaScript version and Files/API were removed 2026-11-08).
+Flask renders each tab on the server (Jinja templates). One route "/" with ?tab=...
 Design: navy sidebar, blue (#1d4ed8 / #2563eb) + teal (#0d9488 / #14b8a6) theme, Plus Jakarta Sans.
 
 ## Requirements for the app

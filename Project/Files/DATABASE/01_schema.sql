@@ -73,19 +73,27 @@ CREATE TABLE Supplier (
 );
 
 -- ---------------------------------------------------------------------
--- SUPPLIER PURCHASE  (ERD relationship "Supplies" M:N with attributes
---   PricePerUnit, Quantity, (TotalCost) -> derived column)
+-- SUPPLIER PURCHASE  (ERD: Supplier 1 --Places--< SupplierPurchase)
 -- ---------------------------------------------------------------------
 CREATE TABLE SupplierPurchase (
     PurchaseID     INT AUTO_INCREMENT PRIMARY KEY,
     SupplierID     INT NOT NULL,
-    ProductID      INT NOT NULL,
-    PricePerUnit   DECIMAL(10,2) NOT NULL,
-    Quantity       INT NOT NULL CHECK (Quantity > 0),
-    TotalCost      DECIMAL(12,2) AS (PricePerUnit * Quantity) STORED,
     PurchaseDate   DATE NOT NULL,
     ReceivedDate   DATE NULL,                -- NULL = not yet received
-    FOREIGN KEY (SupplierID) REFERENCES Supplier(SupplierID),
+    FOREIGN KEY (SupplierID) REFERENCES Supplier(SupplierID)
+);
+
+-- ---------------------------------------------------------------------
+-- SUPPLIER PURCHASE ITEM  (ERD: SupplierPurchase >-Contains-< Product, M:N resolved)
+-- ---------------------------------------------------------------------
+CREATE TABLE SupplierPurchaseItem (
+    PurchaseID     INT NOT NULL,
+    ProductID      INT NOT NULL,
+    PricePerUnit   DECIMAL(10,2) NOT NULL CHECK (PricePerUnit >= 0),
+    Quantity       INT NOT NULL CHECK (Quantity > 0),
+    LineTotal      DECIMAL(12,2) AS (PricePerUnit * Quantity) STORED,
+    PRIMARY KEY (PurchaseID, ProductID),
+    FOREIGN KEY (PurchaseID) REFERENCES SupplierPurchase(PurchaseID) ON DELETE CASCADE,
     FOREIGN KEY (ProductID)  REFERENCES Product(ProductID)
 );
 

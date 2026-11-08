@@ -329,17 +329,33 @@ UPDATE_SUPPLIER = """
 """
 
 SUPPLIER_PURCHASES = """
-    SELECT sp.PurchaseID, s.SupplierName, p.ProductName, sp.Quantity,
-           sp.PricePerUnit, sp.TotalCost, sp.PurchaseDate, sp.ReceivedDate
+    SELECT sp.PurchaseID, s.SupplierName, sp.PurchaseDate, sp.ReceivedDate,
+           SUM(spi.Quantity)  AS TotalUnits,
+           SUM(spi.LineTotal) AS TotalCost
     FROM SupplierPurchase sp
-    JOIN Supplier s ON s.SupplierID = sp.SupplierID
-    JOIN Product p  ON p.ProductID  = sp.ProductID
-    ORDER BY sp.ReceivedDate IS NOT NULL, sp.PurchaseDate DESC
+    JOIN Supplier s               ON s.SupplierID  = sp.SupplierID
+    JOIN SupplierPurchaseItem spi ON spi.PurchaseID = sp.PurchaseID
+    GROUP BY sp.PurchaseID, s.SupplierName, sp.PurchaseDate, sp.ReceivedDate
+    ORDER BY sp.ReceivedDate IS NOT NULL, sp.PurchaseDate DESC, sp.PurchaseID DESC
+"""
+
+SUPPLIER_PURCHASE_ITEMS = """
+    SELECT spi.PurchaseID, p.ProductName, c.Size, c.Color,
+           spi.Quantity, spi.PricePerUnit, spi.LineTotal
+    FROM SupplierPurchaseItem spi
+    JOIN Product p  ON p.ProductID  = spi.ProductID
+    JOIN Category c ON c.CategoryID = p.CategoryID
+    ORDER BY spi.PurchaseID, p.ProductName
 """
 
 INSERT_SUPPLIER_PURCHASE = """
-    INSERT INTO SupplierPurchase (SupplierID, ProductID, PricePerUnit, Quantity, PurchaseDate)
-    VALUES (%s, %s, %s, %s, CURDATE())
+    INSERT INTO SupplierPurchase (SupplierID, PurchaseDate)
+    VALUES (%s, CURDATE())
+"""
+
+INSERT_SUPPLIER_PURCHASE_ITEM = """
+    INSERT INTO SupplierPurchaseItem (PurchaseID, ProductID, PricePerUnit, Quantity)
+    VALUES (%s, %s, %s, %s)
 """
 
 # Receiving a shipment (see db.receive_supplier_purchase) -- one transaction.
@@ -352,9 +368,9 @@ MARK_PURCHASE_RECEIVED = """
 
 ADD_RECEIVED_STOCK = """
     UPDATE Product p
-    JOIN SupplierPurchase sp ON sp.ProductID = p.ProductID
-    SET p.QuantityInStock = p.QuantityInStock + sp.Quantity
-    WHERE sp.PurchaseID = %s
+    JOIN SupplierPurchaseItem spi ON spi.ProductID = p.ProductID
+    SET p.QuantityInStock = p.QuantityInStock + spi.Quantity
+    WHERE spi.PurchaseID = %s
 """
 
 

@@ -128,6 +128,25 @@ def place_order(cust_id, payment_method, card_last_four=None):
         conn.close()
 
 
+def create_supplier_purchase(supplier_id, items):
+    """Create one purchase order with its products. Returns the new PurchaseID."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(q.INSERT_SUPPLIER_PURCHASE, (supplier_id,))
+        purchase_id = cur.lastrowid
+        for product_id, unit_cost, quantity in items:
+            cur.execute(q.INSERT_SUPPLIER_PURCHASE_ITEM, (purchase_id, product_id, unit_cost, quantity))
+
+        conn.commit()
+        return purchase_id
+    except mysql.connector.Error:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def receive_supplier_purchase(purchase_id):
     """Mark a supplier shipment as received AND add it to inventory.
     Returns True if it was received, False if it already had been."""

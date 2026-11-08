@@ -49,18 +49,27 @@ INSERT INTO Supplier (SupplierName, ContactFirstName, ContactLastName, ContactEm
 ('Bella Rose Fashions',         'Nina',  'Russo',  'nina@bellarose.com'),
 ('Crestwood Menswear Supply',   'Paul',  'Grant',  'pgrant@crestwood.com');
 
-INSERT INTO SupplierPurchase (SupplierID, ProductID, PricePerUnit, Quantity, PurchaseDate, ReceivedDate) VALUES
-(1, 1, 18.00, 40, '2026-01-10', '2026-01-17'),
-(1, 2, 21.00, 30, '2026-01-10', '2026-01-17'),
-(1, 9, 15.00, 35, '2026-02-01', '2026-02-09'),
-(2, 3, 22.00, 30, '2026-01-12', '2026-01-20'),
-(2, 4, 31.00, 20, '2026-02-15', '2026-02-24'),
-(3, 5, 36.00, 25, '2026-01-20', '2026-01-28'),
-(3, 6, 40.00, 20, '2026-03-01', '2026-03-12'),
-(3,10, 26.00, 20, '2026-04-02', '2026-04-10'),
-(4, 7, 70.00, 15, '2026-02-05', '2026-02-19'),
-(4, 8,140.00, 10, '2026-02-05', '2026-02-19'),
-(2, 4, 31.00, 15, '2026-10-20', NULL);          -- open PO, not received
+INSERT INTO SupplierPurchase (SupplierID, PurchaseDate, ReceivedDate) VALUES
+(1, '2026-01-10', '2026-01-17'),
+(2, '2026-01-12', '2026-01-20'),
+(3, '2026-01-20', '2026-01-28'),
+(1, '2026-02-01', '2026-02-09'),
+(4, '2026-02-05', '2026-02-19'),
+(2, '2026-02-15', '2026-02-24'),
+(3, '2026-03-01', '2026-03-12'),
+(3, '2026-04-02', '2026-04-10'),
+(2, '2026-10-20', NULL);          -- open PO, not received
+
+INSERT INTO SupplierPurchaseItem (PurchaseID, ProductID, PricePerUnit, Quantity) VALUES
+(1, 1,  18.00, 40), (1, 2, 21.00, 30),
+(2, 3,  22.00, 30),
+(3, 5,  36.00, 25),
+(4, 9,  15.00, 35),
+(5, 7,  70.00, 15), (5, 8, 140.00, 10),
+(6, 4,  31.00, 20),
+(7, 6,  40.00, 20),
+(8, 10, 26.00, 20),
+(9, 4,  31.00, 15), (9, 3, 22.00, 10);
 
 -- Orders (OrderAmount = sum of the items purchased; recalculated at the bottom)
 INSERT INTO Orders (CustID, OrderDate, CompletionDate, OrderAmount) VALUES

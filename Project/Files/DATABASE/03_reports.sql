@@ -19,7 +19,7 @@ USE StyleHub;
 -- ---------------------------------------------------------------------
 -- REPORT 1: Product Sales Performance
 -- Question: Which products earn the most, and which are not selling?
--- Uses: JOIN (Product, Category, OrderItem, SupplierPurchase),
+-- Uses: JOIN (Product, Category, OrderItem, SupplierPurchaseItem),
 --       SUM, COUNT, AVG, GROUP BY
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE VIEW vw_ProductSalesPerformance AS
@@ -43,8 +43,8 @@ LEFT JOIN OrderItem oi                       -- LEFT keeps never-sold products
     ON oi.ProductID = p.ProductID
 LEFT JOIN (                                  -- weighted avg cost from suppliers
     SELECT ProductID,
-           ROUND(SUM(TotalCost) / SUM(Quantity), 2) AS AvgUnitCost
-    FROM SupplierPurchase
+           ROUND(SUM(LineTotal) / SUM(Quantity), 2) AS AvgUnitCost
+    FROM SupplierPurchaseItem
     GROUP BY ProductID
 ) cost
     ON cost.ProductID = p.ProductID
@@ -62,8 +62,8 @@ ORDER BY Revenue DESC;
 -- REPORT 2: Low-Stock Reorder Report   << MANAGER DECISION REPORT >>
 -- Question: What do I need to reorder today, from whom, how many,
 --           and what will it cost?
--- Uses: JOIN (Product, Category, SupplierPurchase, Supplier),
---       SUM, MAX, GROUP BY
+-- Uses: JOIN (Product, Category, SupplierPurchaseItem, SupplierPurchase,
+--       Supplier), SUM, MAX, GROUP BY
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE VIEW vw_LowStockReorder AS
 SELECT
@@ -89,23 +89,27 @@ FROM Product p
 JOIN Category c
     ON c.CategoryID = p.CategoryID
 LEFT JOIN (                                  -- most recent purchase per product
-    SELECT sp.*
-    FROM SupplierPurchase sp
-    JOIN (SELECT ProductID, MAX(PurchaseDate) AS LastDate
-          FROM SupplierPurchase
-          WHERE ReceivedDate IS NOT NULL
-          GROUP BY ProductID) m
-      ON m.ProductID = sp.ProductID AND m.LastDate = sp.PurchaseDate
-    WHERE sp.ReceivedDate IS NOT NULL
+    SELECT spi.ProductID, spi.PricePerUnit, sp.SupplierID
+    FROM SupplierPurchaseItem spi
+    JOIN SupplierPurchase sp
+      ON sp.PurchaseID = spi.PurchaseID
+    JOIN (SELECT i.ProductID, MAX(i.PurchaseID) AS LastPurchaseID
+          FROM SupplierPurchaseItem i
+          JOIN SupplierPurchase h ON h.PurchaseID = i.PurchaseID
+          WHERE h.ReceivedDate IS NOT NULL
+          GROUP BY i.ProductID) m
+      ON m.ProductID = spi.ProductID AND m.LastPurchaseID = spi.PurchaseID
 ) lastp
     ON lastp.ProductID = p.ProductID
 LEFT JOIN Supplier s
     ON s.SupplierID = lastp.SupplierID
 LEFT JOIN (                                  -- open purchase orders
-    SELECT ProductID, SUM(Quantity) AS QtyOnOrder
-    FROM SupplierPurchase
-    WHERE ReceivedDate IS NULL
-    GROUP BY ProductID
+    SELECT spi.ProductID, SUM(spi.Quantity) AS QtyOnOrder
+    FROM SupplierPurchaseItem spi
+    JOIN SupplierPurchase sp
+      ON sp.PurchaseID = spi.PurchaseID
+    WHERE sp.ReceivedDate IS NULL
+    GROUP BY spi.ProductID
 ) onord
     ON onord.ProductID = p.ProductID
 WHERE p.QuantityInStock <= p.ReorderPoint
