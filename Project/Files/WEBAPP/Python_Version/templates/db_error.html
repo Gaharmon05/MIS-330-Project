@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StyleHub · Database unavailable</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='Styles/index.css') }}">
+</head>
+<body>
+  <main class="content" style="max-width:640px;margin:60px auto;">
+    <div class="card"><div class="card-body">
+      <h1 style="margin-bottom:8px;">Can't reach the StyleHub database</h1>
+      <p class="muted">{{ message }}</p>
+      <p>Check that MySQL is running, that the three scripts in <code>Files/DATABASE</code> were run,
+         and that the settings at the top of <code>db.py</code> are correct.</p>
+    </div></div>
+  </main>
+</body>
+</html>

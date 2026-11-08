@@ -1,0 +1,34 @@
+{# ===================== WORK BOARD (employees) ===================== #}
+<div class="callout">{{ icon('info') }}<span>Pick a tailor and a new status, then save. A job can't move past <strong>Received</strong> until a tailor is assigned — the database's CHECK constraint enforces this. The pickup date is recorded automatically when a job is marked <strong>Completed</strong>.</span></div>
+
+<div class="kanban">
+  {% for status, jobs in columns.items() %}
+  <div class="column">
+    <div class="column-head"><span class="status status-{{ status|slug }}">{{ status }}</span><span class="count">{{ jobs|length }}</span></div>
+    <div class="column-cards">
+      {% for a in jobs %}
+      <div class="job s-{{ status|slug }}">
+        <div class="garment">{{ a.GarmentDescription }}</div>
+        <div class="meta">#{{ a.AlterationOrderID }} · {{ a.AlterationName }}<br>{{ a.CustomerName }}{% if a.Phone %} · {{ a.Phone }}{% endif %}<br>
+          Requested {{ a.RequestDate|day }}{% if a.PickupDate %} · picked up {{ a.PickupDate|day }}{% endif %}</div>
+        {% if not a.EmpID %}<div class="unassigned" style="margin-bottom:8px;">No tailor assigned</div>{% endif %}
+        <form method="post" action="{{ url_for('update_alteration') }}" class="job-form">
+          <input type="hidden" name="alteration_order_id" value="{{ a.AlterationOrderID }}">
+          <select name="emp_id" class="select full" aria-label="Tailor">
+            <option value="">— Unassigned —</option>
+            {% for t in tailors %}<option value="{{ t.EmpID }}" {% if a.EmpID == t.EmpID %}selected{% endif %}>{{ t.FirstName }} {{ t.LastName }}</option>{% endfor %}
+          </select>
+          <select name="status" class="select full" aria-label="Status">
+            {% for s in statuses %}<option {% if a.Status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+          </select>
+          <label class="fee-field">$<input name="fee" type="number" step="0.01" min="0" value="{{ a.ServiceFee }}" class="input" aria-label="Service fee"></label>
+          <button class="btn btn-soft btn-sm">Save</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="column-empty">Nothing here</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
